@@ -1,7 +1,7 @@
+using FilesXchange.API.Helpers;
+
 var builder = WebApplication.CreateBuilder(args);
-
-
-builder.Services.AddOpenApi();
+builder.ConfigureServices();
 
 var app = builder.Build();
 
