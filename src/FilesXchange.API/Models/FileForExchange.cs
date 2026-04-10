@@ -3,7 +3,7 @@ namespace FilesXchange.API.Models;
 public record FileForExchange(
     Guid Id,
     string Token,
-    string PathToFile,
+    IList<string> PathsToFiles,
     DateTime CreatedAt,
     DateTime ExpiresAt
 );

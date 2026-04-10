@@ -1,3 +1,3 @@
 namespace FilesXchange.API.Models;
 
-public record UploadResponse(string Filename, string Token);
+public record UploadResponse(IList<string> Filenames, string Token);
