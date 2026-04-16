@@ -25,6 +25,7 @@ public static class AppConfigurator
             options.MultipartBodyLengthLimit = filesXchangeOptions.MaxFileSizeBytes;
         });
 
+        builder.Services.AddMemoryCache();
         builder.Services.AddDbContext<FilesXchangeDbContext>(opts
             => opts.UseSqlite(builder.Configuration.GetConnectionString("Default")));
         builder.Services.AddControllers();
