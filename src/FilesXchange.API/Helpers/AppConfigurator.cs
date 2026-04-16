@@ -19,5 +19,6 @@ public static class AppConfigurator
                 var DbPath = Path.Join(pathForDatabase, dbName);
                 opts.UseSqlite($"Data Source={DbPath}");
             });
+        builder.Services.AddControllers();
     }
 }

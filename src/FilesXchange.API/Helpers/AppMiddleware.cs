@@ -10,7 +10,7 @@ public static class AppMiddleware
         {
             app.MapOpenApi();
         }
-
+        app.MapControllers();
         // app.UseHttpsRedirection();
     }
 }
