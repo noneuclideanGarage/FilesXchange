@@ -6,8 +6,9 @@ namespace FilesXchange.API.Helpers;
 public static class AppConfigurator
 {
     public static void ConfigureServices(this WebApplicationBuilder builder)
-    {
-        builder.Services.AddOpenApi();
+    {   
+        var appSettingsSection = builder.Configuration.GetSection(AppOptions.SectionName);
+        builder.Services.Configure<AppOptions>(appSettingsSection);
 
         builder.Services.AddDbContext<FilesXchangeDbContext>(opts =>
             {
