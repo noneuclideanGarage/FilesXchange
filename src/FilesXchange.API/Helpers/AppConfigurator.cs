@@ -14,8 +14,7 @@ public static class AppConfigurator
         builder.Services.AddOptions<AppOptions>()
             .Bind(appSettingsSection)
             .ValidateDataAnnotations();
-        var filesXchangeOptions = 
-            appSettingsSection.Get<AppOptions>() ?? new AppOptions();
+        var filesXchangeOptions = appSettingsSection.Get<AppOptions>() ?? new AppOptions();
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestBodySize = filesXchangeOptions.MaxFileSizeBytes;
