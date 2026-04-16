@@ -1,6 +1,6 @@
 using FilesXchange.API.Helpers.Constants;
 
-namespace FilesXchange.API.Helpers;
+namespace FilesXchange.API.Options;
 
 public sealed class AppOptions
 {
