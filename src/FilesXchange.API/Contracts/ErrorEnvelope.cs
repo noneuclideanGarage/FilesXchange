@@ -1,3 +1,3 @@
-namespace FilesXchange.API.Helpers.Contracts;
+namespace FilesXchange.API.Contracts;
 
 public sealed record ErrorEnvelope(ApiError Error);

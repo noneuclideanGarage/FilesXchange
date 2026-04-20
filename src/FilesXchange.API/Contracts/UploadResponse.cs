@@ -1,4 +1,4 @@
-namespace FilesXchange.API.Helpers.Contracts;
+namespace FilesXchange.API.Contracts;
 
 public sealed record UploadResponse(
     string Token,

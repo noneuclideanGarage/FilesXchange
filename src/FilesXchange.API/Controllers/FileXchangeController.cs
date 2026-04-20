@@ -1,6 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json;
-using FilesXchange.API.Helpers.Contracts;
+using FilesXchange.API.Contracts;
 using FilesXchange.API.Helpers.Exceptions;
 using FilesXchange.API.Helpers.Interfaces;
 using FilesXchange.API.Models;
