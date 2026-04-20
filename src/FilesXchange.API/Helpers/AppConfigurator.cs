@@ -2,6 +2,7 @@ using FilesXchange.API.Data;
 using FilesXchange.API.Options;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace FilesXchange.API.Helpers;
 
@@ -9,6 +10,7 @@ public static class AppConfigurator
 {
     public static void ConfigureServices(this WebApplicationBuilder builder)
     {
+        builder.Host.UseSerilog();
         var appSettingsSection = builder.Configuration.GetSection(AppOptions.SectionName);
         builder.Services.Configure<AppOptions>(appSettingsSection);
         builder.Services.AddOptions<AppOptions>()
