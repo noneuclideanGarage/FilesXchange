@@ -26,17 +26,28 @@ Log.Logger = new LoggerConfiguration()
         shared: true)
     .CreateLogger();
 
-
-var builder = WebApplication.CreateBuilder(args);
-builder.ConfigureServices();
-
-var app = builder.Build();
-
-//app.ConfigureMiddleware();
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
-}
-app.MapControllers();
+    var builder = WebApplication.CreateBuilder(args);
+    builder.ConfigureServices();
+    var app = builder.Build();
 
-app.Run();
+    //app.ConfigureMiddleware();
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
+    app.MapControllers();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "[EXCEPTION] Application terminated unexpectedly");
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
+
