@@ -23,8 +23,18 @@
   gap: 28px;
 }
 
-.upload-panel__header {
+.upload-panel__header,
+.download-panel,
+.download-panel__header {
   display: grid;
+}
+
+.download-panel {
+  gap: 28px;
+}
+
+.upload-panel__header,
+.download-panel__header {
   gap: 16px;
 }
 
@@ -420,6 +430,80 @@ code {
   grid-row: 1 / span 2;
 }
 
+.state-panel {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.state-panel--error {
+  border-color: #f0b4ac;
+  background: #fff0ed;
+}
+
+.state-panel__text {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.55;
+}
+
+.download-info {
+  display: grid;
+  gap: 18px;
+}
+
+.download-info__summary {
+  display: grid;
+  grid-template-columns: 1.5fr 0.7fr 1fr;
+  gap: 12px;
+}
+
+.download-info__summary > div,
+.download-info__files {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.download-info__label {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.download-file-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.download-file-list__item {
+  overflow: hidden;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f7f8fa;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 @keyframes progress-slide {
   0% {
     transform: translateX(-100%);
@@ -470,5 +554,13 @@ code {
   .token-display__row--link .copy-button {
     grid-column: 1;
     grid-row: auto;
+  }
+
+  .download-info__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .download-actions {
+    flex-direction: column;
   }
 }
