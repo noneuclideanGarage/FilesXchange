@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { DropZone } from '../components/upload/DropZone'
 import { FileList } from '../components/upload/FileList'
 import { ProgressBar } from '../components/upload/ProgressBar'
+import { ResultCard } from '../components/upload/ResultCard'
 import { UploadButton } from '../components/upload/UploadButton'
 import { useUpload } from '../hooks/useUpload'
 
@@ -10,7 +11,8 @@ const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024 * 1024
 export function UploadPage() {
   const [files, setFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const { error, progress, startUpload, status } = useUpload()
+  const { error, progress, resetUpload, result, startUpload, status } =
+    useUpload()
 
   const totalSize = useMemo(
     () => files.reduce((sum, file) => sum + file.size, 0),
@@ -47,6 +49,12 @@ export function UploadPage() {
     void startUpload(files)
   }
 
+  function handleReset() {
+    setFiles([])
+    setIsDragging(false)
+    resetUpload()
+  }
+
   return (
     <main className="page-shell page-shell--upload">
       <section className="intro-section upload-panel" aria-labelledby="upload-title">
@@ -58,43 +66,49 @@ export function UploadPage() {
           </p>
         </div>
 
-        <DropZone
-          disabled={isUploading}
-          isDragging={isDragging}
-          onDragStateChange={setIsDragging}
-          onFilesSelected={handleFilesSelected}
-        />
+        {status === 'success' && result ? (
+          <ResultCard result={result} onReset={handleReset} />
+        ) : (
+          <>
+            <DropZone
+              disabled={isUploading}
+              isDragging={isDragging}
+              onDragStateChange={setIsDragging}
+              onFilesSelected={handleFilesSelected}
+            />
 
-        <div className="upload-summary" aria-live="polite">
-          <span>{files.length} selected</span>
-          <span>{formatBytes(totalSize)} of 2 GB</span>
-        </div>
+            <div className="upload-summary" aria-live="polite">
+              <span>{files.length} selected</span>
+              <span>{formatBytes(totalSize)} of 2 GB</span>
+            </div>
 
-        {isOverLimit ? (
-          <p className="inline-error" role="alert">
-            Total upload size must not exceed 2 GB. Remove one or more files.
-          </p>
-        ) : null}
+            {isOverLimit ? (
+              <p className="inline-error" role="alert">
+                Total upload size must not exceed 2 GB. Remove one or more files.
+              </p>
+            ) : null}
 
-        {uploadError ? (
-          <p className="inline-error" role="alert">
-            {uploadError.message}
-          </p>
-        ) : null}
+            {uploadError ? (
+              <p className="inline-error" role="alert">
+                {uploadError.message}
+              </p>
+            ) : null}
 
-        <FileList
-          disabled={isUploading}
-          files={files}
-          onRemoveFile={handleRemoveFile}
-        />
+            <FileList
+              disabled={isUploading}
+              files={files}
+              onRemoveFile={handleRemoveFile}
+            />
 
-        {isUploading ? <ProgressBar progress={progress} /> : null}
+            {isUploading ? <ProgressBar progress={progress} /> : null}
 
-        <UploadButton
-          disabled={!canUpload}
-          isUploading={isUploading}
-          onUpload={handleUpload}
-        />
+            <UploadButton
+              disabled={!canUpload}
+              isUploading={isUploading}
+              onUpload={handleUpload}
+            />
+          </>
+        )}
       </section>
     </main>
   )
