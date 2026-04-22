@@ -1,10 +1,16 @@
 type FileItemProps = {
+  disabled?: boolean
   file: File
   index: number
   onRemove: (index: number) => void
 }
 
-export function FileItem({ file, index, onRemove }: FileItemProps) {
+export function FileItem({
+  disabled = false,
+  file,
+  index,
+  onRemove,
+}: FileItemProps) {
   return (
     <li className="file-item">
       <div className="file-item__meta">
@@ -16,6 +22,7 @@ export function FileItem({ file, index, onRemove }: FileItemProps) {
       <button
         aria-label={`Remove ${file.name}`}
         className="icon-button"
+        disabled={disabled}
         onClick={() => onRemove(index)}
         type="button"
       >

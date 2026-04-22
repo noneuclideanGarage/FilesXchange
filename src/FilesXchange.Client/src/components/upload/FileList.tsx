@@ -1,11 +1,16 @@
 import { FileItem } from './FileItem'
 
 type FileListProps = {
+  disabled?: boolean
   files: File[]
   onRemoveFile: (index: number) => void
 }
 
-export function FileList({ files, onRemoveFile }: FileListProps) {
+export function FileList({
+  disabled = false,
+  files,
+  onRemoveFile,
+}: FileListProps) {
   if (files.length === 0) {
     return (
       <p className="empty-state">
@@ -18,6 +23,7 @@ export function FileList({ files, onRemoveFile }: FileListProps) {
     <ul className="file-list" aria-label="Selected files">
       {files.map((file, index) => (
         <FileItem
+          disabled={disabled}
           file={file}
           index={index}
           key={`${file.name}-${file.lastModified}-${index}`}

@@ -1,18 +1,24 @@
 import type { ChangeEvent, DragEvent } from 'react'
 
 type DropZoneProps = {
+  disabled?: boolean
   isDragging: boolean
   onDragStateChange: (isDragging: boolean) => void
   onFilesSelected: (files: File[]) => void
 }
 
 export function DropZone({
+  disabled = false,
   isDragging,
   onDragStateChange,
   onFilesSelected,
 }: DropZoneProps) {
   function handleDragEnter(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault()
+    if (disabled) {
+      return
+    }
+
     onDragStateChange(true)
   }
 
@@ -21,6 +27,10 @@ export function DropZone({
   }
 
   function handleDragLeave(event: DragEvent<HTMLLabelElement>) {
+    if (disabled) {
+      return
+    }
+
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
       return
     }
@@ -31,17 +41,32 @@ export function DropZone({
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault()
     onDragStateChange(false)
+    if (disabled) {
+      return
+    }
+
     onFilesSelected(Array.from(event.dataTransfer.files))
   }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    if (disabled) {
+      event.currentTarget.value = ''
+      return
+    }
+
     onFilesSelected(Array.from(event.currentTarget.files ?? []))
     event.currentTarget.value = ''
   }
 
   return (
     <label
-      className={`drop-zone${isDragging ? ' drop-zone--dragging' : ''}`}
+      className={[
+        'drop-zone',
+        isDragging ? 'drop-zone--dragging' : '',
+        disabled ? 'drop-zone--disabled' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -51,6 +76,7 @@ export function DropZone({
       <span className="drop-zone__hint">or click to select from your device</span>
       <input
         className="drop-zone__input"
+        disabled={disabled}
         multiple
         onChange={handleInputChange}
         type="file"

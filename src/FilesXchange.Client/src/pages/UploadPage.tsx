@@ -1,21 +1,28 @@
 import { useMemo, useState } from 'react'
 import { DropZone } from '../components/upload/DropZone'
 import { FileList } from '../components/upload/FileList'
+import { ProgressBar } from '../components/upload/ProgressBar'
+import { UploadButton } from '../components/upload/UploadButton'
+import { useUpload } from '../hooks/useUpload'
 
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024 * 1024
 
 export function UploadPage() {
   const [files, setFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const { error, progress, startUpload, status } = useUpload()
 
   const totalSize = useMemo(
     () => files.reduce((sum, file) => sum + file.size, 0),
     [files],
   )
   const isOverLimit = totalSize > MAX_UPLOAD_SIZE_BYTES
+  const isUploading = status === 'uploading'
+  const uploadError = status === 'error' ? error : null
+  const canUpload = files.length > 0 && !isOverLimit && !isUploading
 
   function handleFilesSelected(nextFiles: File[]) {
-    if (nextFiles.length === 0) {
+    if (isUploading || nextFiles.length === 0) {
       return
     }
 
@@ -23,9 +30,21 @@ export function UploadPage() {
   }
 
   function handleRemoveFile(indexToRemove: number) {
+    if (isUploading) {
+      return
+    }
+
     setFiles((currentFiles) =>
       currentFiles.filter((_, index) => index !== indexToRemove),
     )
+  }
+
+  function handleUpload() {
+    if (!canUpload) {
+      return
+    }
+
+    void startUpload(files)
   }
 
   return (
@@ -40,6 +59,7 @@ export function UploadPage() {
         </div>
 
         <DropZone
+          disabled={isUploading}
           isDragging={isDragging}
           onDragStateChange={setIsDragging}
           onFilesSelected={handleFilesSelected}
@@ -56,7 +76,25 @@ export function UploadPage() {
           </p>
         ) : null}
 
-        <FileList files={files} onRemoveFile={handleRemoveFile} />
+        {uploadError ? (
+          <p className="inline-error" role="alert">
+            {uploadError.message}
+          </p>
+        ) : null}
+
+        <FileList
+          disabled={isUploading}
+          files={files}
+          onRemoveFile={handleRemoveFile}
+        />
+
+        {isUploading ? <ProgressBar progress={progress} /> : null}
+
+        <UploadButton
+          disabled={!canUpload}
+          isUploading={isUploading}
+          onUpload={handleUpload}
+        />
       </section>
     </main>
   )
