@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using System.IO.Compression;
 
 namespace FilesXchange.API.Tests.Controllers;
 
@@ -143,27 +144,88 @@ public sealed class FileXchangeControllerTests
         Assert.Equal("/api/download/multi-file-token", payload.DownloadUrl);
     }
 
+    [Fact]
+    public async Task DownloadAsync_WithSingleFile_ReturnsFileResult()
+    {
+        var exchange = CreateExchange(
+            "single-download-token",
+            [new StoredFileDescriptor("uploads/internal/report.txt", "report.txt", 4)]);
+        var controller = CreateController(
+            cacheService: new StubCacheService(exchange),
+            fileStorageService: new StubFileStorageService(new Dictionary<string, byte[]>
+            {
+                ["uploads/internal/report.txt"] = [1, 2, 3, 4]
+            }));
+
+        var result = await controller.DownloadAsync(exchange.Token, CancellationToken.None);
+
+        var fileResult = Assert.IsType<FileStreamResult>(result);
+        Assert.Equal("text/plain", fileResult.ContentType);
+        Assert.Equal("report.txt", fileResult.FileDownloadName);
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WithMultipleFiles_ReturnsZipArchive()
+    {
+        var exchange = CreateExchange(
+            "zip-download-token",
+            [
+                new StoredFileDescriptor("uploads/internal/one.txt", "one.txt", 3),
+                new StoredFileDescriptor("uploads/internal/two.txt", "two.txt", 4)
+            ]);
+        var controller = CreateController(
+            cacheService: new StubCacheService(exchange),
+            fileStorageService: new StubFileStorageService(new Dictionary<string, byte[]>
+            {
+                ["uploads/internal/one.txt"] = [1, 2, 3],
+                ["uploads/internal/two.txt"] = [4, 5, 6, 7]
+            }));
+
+        await using var responseBody = new MemoryStream();
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+        controller.ControllerContext.HttpContext.Response.Body = responseBody;
+
+        var result = await controller.DownloadAsync(exchange.Token, CancellationToken.None);
+
+        Assert.IsType<EmptyResult>(result);
+        Assert.Equal("application/zip", controller.Response.ContentType);
+        Assert.Equal("attachment; filename=\"files.zip\"", controller.Response.Headers.ContentDisposition.ToString());
+
+        responseBody.Position = 0;
+        using var archive = new ZipArchive(responseBody, ZipArchiveMode.Read, leaveOpen: true);
+        Assert.Collection(
+            archive.Entries.OrderBy(static entry => entry.FullName),
+            first => Assert.Equal("one.txt", first.FullName),
+            second => Assert.Equal("two.txt", second.FullName));
+    }
+
     private static FileXchangeController CreateController(
         IFileExchangeService? fileExchangeService = null,
         ICacheService? cacheService = null,
+        IFileStorageService? fileStorageService = null,
         AppOptions? appOptions = null)
     {
         return new FileXchangeController(
             fileExchangeService ?? new StubFileExchangeService(),
             cacheService ?? new StubCacheService(),
-            new StubFileStorageService(),
+            fileStorageService ?? new StubFileStorageService(),
             NullLogger<FileXchangeController>.Instance,
             Microsoft.Extensions.Options.Options.Create(appOptions ?? new AppOptions()));
     }
 
-    private static FileForExchange CreateExchange(string token)
+    private static FileForExchange CreateExchange(
+        string token,
+        IReadOnlyList<StoredFileDescriptor>? storedFiles = null)
     {
         var createdAt = DateTime.UtcNow;
 
         return new FileForExchange
         {
             Token = token,
-            PathsToFiles = "[]",
+            PathsToFiles = StoredFileMetadataSerializer.Serialize(storedFiles ?? []),
             CreatedAt = createdAt,
             ExpiresAt = createdAt.AddDays(7)
         };
@@ -216,6 +278,13 @@ public sealed class FileXchangeControllerTests
 
     private sealed class StubFileStorageService : IFileStorageService
     {
+        private readonly IReadOnlyDictionary<string, byte[]> _files;
+
+        public StubFileStorageService(IReadOnlyDictionary<string, byte[]>? files = null)
+        {
+            _files = files ?? new Dictionary<string, byte[]>();
+        }
+
         public Task<IReadOnlyList<StoredFileDescriptor>> SaveFilesAsync(
             IEnumerable<IFormFile> files,
             CancellationToken cancellationToken = default) =>
@@ -223,8 +292,16 @@ public sealed class FileXchangeControllerTests
 
         public Task<StoredFileReadHandle> OpenReadAsync(
             string relativePath,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+        {
+            if (!_files.TryGetValue(relativePath, out var content))
+            {
+                throw new NotSupportedException();
+            }
+
+            var fileName = Path.GetFileName(relativePath);
+            return Task.FromResult(new StoredFileReadHandle(new MemoryStream(content), fileName, content.LongLength));
+        }
 
         public Task DeleteFileAsync(
             string relativePath,
