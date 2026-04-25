@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: src/FilesXchange.API/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - filesxchange-uploads:/app/uploads
+      - filesxchange-data:/app/data
+      - filesxchange-logs:/app/logs
+    networks:
+      - filesxchange-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: src/FilesXchange.Client/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    networks:
+      - filesxchange-network
+
+networks:
+  filesxchange-network:
+    driver: bridge
+
+volumes:
+  filesxchange-uploads:
+  filesxchange-data:
+  filesxchange-logs:
