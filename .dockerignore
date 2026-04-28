@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+
+src/FilesXchange.Client/node_modules/
+src/FilesXchange.Client/dist/
+
+**/uploads/
+**/logs/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.log
+
+.git/
+.gitignore

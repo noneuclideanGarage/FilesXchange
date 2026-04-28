@@ -3,6 +3,7 @@ using System.Text.Json;
 using FilesXchange.API.Contracts;
 using FilesXchange.API.Helpers.Exceptions;
 using FilesXchange.API.Helpers.Interfaces;
+using FilesXchange.API.Helpers.Logging;
 using FilesXchange.API.Models;
 using FilesXchange.API.Options;
 using Microsoft.AspNetCore.Mvc;
@@ -92,7 +93,7 @@ public sealed class FileXchangeController : ControllerBase
             _cacheService.SetFileExchange(result.Exchange);
             _logger.LogInformation(
                 "[UPLOAD] Token={Token}, Files={FileCount}, Size={TotalSizeBytes}B, ExpiresAt={ExpiresAt}",
-                result.Exchange.Token,
+                TokenLogFormatter.Redact(result.Exchange.Token),
                 files.Count,
                 totalSize,
                 result.Exchange.ExpiresAt);
@@ -140,7 +141,7 @@ public sealed class FileXchangeController : ControllerBase
                 var handle = await _fileStorageService.OpenReadAsync(file.RelativePath, cancellationToken);
                 var contentType = ResolveContentType(file.FileName);
                 _logger.LogInformation("[DOWNLOAD] Token={Token}, File={FileName}",
-                    resolvedExchange.Exchange!.Token,
+                    TokenLogFormatter.Redact(resolvedExchange.Exchange!.Token),
                     file.FileName);
                 return File(handle.Stream, contentType, file.FileName);
             }
@@ -159,13 +160,13 @@ public sealed class FileXchangeController : ControllerBase
             }
 
             _logger.LogInformation("[DOWNLOAD] Token={Token}, File=files.zip",
-                resolvedExchange.Exchange!.Token);
+                TokenLogFormatter.Redact(resolvedExchange.Exchange!.Token));
 
             return new EmptyResult();
         }
         catch (FileStorageException)
         {
-            _logger.LogError("[FS ERROR] Failed to read stored file(s) for Token={Token}", token);
+            _logger.LogError("[FS ERROR] Failed to read stored file(s) for Token={Token}", TokenLogFormatter.Redact(token));
             return StatusCode(StatusCodes.Status500InternalServerError, new ErrorEnvelope(new ApiError(
                 "file_access_error",
                 "Failed to read one or more files from storage.")));
@@ -206,7 +207,7 @@ public sealed class FileXchangeController : ControllerBase
         var exchange = await _cacheService.GetFileExchangeByTokenAsync(token, cancellationToken);
         if (exchange is null)
         {
-            _logger.LogWarning("[NOT FOUND] Token={Token}", token);
+            _logger.LogWarning("[NOT FOUND] Token={Token}", TokenLogFormatter.Redact(token));
             return new ResolvedExchangeResult(null, [], NotFound(new ErrorEnvelope(new ApiError(
                 "token_not_found",
                 "The requested token was not found."))));
@@ -214,7 +215,7 @@ public sealed class FileXchangeController : ControllerBase
 
         if (exchange.ExpiresAt <= DateTime.UtcNow)
         {
-            _logger.LogWarning("[EXPIRED] Token={Token}, ExpiredAt={ExpiredAt}", token, exchange.ExpiresAt);
+            _logger.LogWarning("[EXPIRED] Token={Token}, ExpiredAt={ExpiredAt}", TokenLogFormatter.Redact(token), exchange.ExpiresAt);
             return new ResolvedExchangeResult(exchange, [], StatusCode(StatusCodes.Status410Gone, new ErrorEnvelope(new ApiError(
                 "token_expired",
                 "The requested token has expired."))));
@@ -234,7 +235,7 @@ public sealed class FileXchangeController : ControllerBase
         }
         catch (JsonException)
         {
-            _logger.LogError("[FS ERROR] Invalid stored metadata for Token={Token}", token);
+            _logger.LogError("[FS ERROR] Invalid stored metadata for Token={Token}", TokenLogFormatter.Redact(token));
             return new ResolvedExchangeResult(exchange, [], StatusCode(StatusCodes.Status500InternalServerError, new ErrorEnvelope(new ApiError(
                 "invalid_exchange_record",
                 "Stored file metadata is invalid."))));

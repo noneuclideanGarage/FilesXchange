@@ -322,8 +322,9 @@ public sealed class FileStorageService : IFileStorageService
         }
 
         var normalizedLeafName = leafName.Normalize(NormalizationForm.FormKC);
+        var invalidCharacters = Path.GetInvalidFileNameChars();
         var sanitizedCharacters = normalizedLeafName
-            .Select(static character => character is '/' or '\\' || char.IsControl(character) ? '_' : character)
+            .Select(character => ShouldReplaceCharacter(character, invalidCharacters) ? '_' : character)
             .ToArray();
 
         var sanitized = CollapseWhitespace(new string(sanitizedCharacters)).Trim().Trim('.');
@@ -337,6 +338,11 @@ public sealed class FileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(fileNameWithoutExtension))
         {
             fileNameWithoutExtension = "file";
+        }
+
+        if (ReservedFileNames.Contains(fileNameWithoutExtension))
+        {
+            fileNameWithoutExtension = $"{fileNameWithoutExtension}_";
         }
 
         return BuildFileName(fileNameWithoutExtension, extension, string.Empty, maxFileNameLength);

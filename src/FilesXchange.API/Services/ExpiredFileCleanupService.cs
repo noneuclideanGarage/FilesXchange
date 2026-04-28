@@ -1,5 +1,6 @@
 using FilesXchange.API.Data;
 using FilesXchange.API.Helpers.Interfaces;
+using FilesXchange.API.Helpers.Logging;
 using FilesXchange.API.Helpers.ServiceObjects.ExpiredFileCleanup;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,7 +57,7 @@ public sealed class ExpiredFileCleanupService : IExpiredFileCleanupService
                     failed++;
                     _logger.LogError(exception,
                         "[CLEANUP ERROR] Expired token {Token} was removed from the database, but file deletion failed",
-                        exchange.Token);
+                        TokenLogFormatter.Redact(exchange.Token));
                 }
 
                 removed++;
@@ -67,7 +68,7 @@ public sealed class ExpiredFileCleanupService : IExpiredFileCleanupService
                 failed++;
                 _logger.LogError(exception,
                     "[CLEANUP ERROR] Failed to remove expired token {Token} expiring at {ExpiresAt}",
-                    exchange.Token,
+                    TokenLogFormatter.Redact(exchange.Token),
                     exchange.ExpiresAt);
             }
         }
