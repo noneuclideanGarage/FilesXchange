@@ -46,6 +46,39 @@ describe('useUpload', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('transitions to uploading and clears transient data before upload completes', async () => {
+    const files = [new File(['hello'], 'hello.txt', { type: 'text/plain' })]
+    const response: UploadResponse = {
+      token: 'upload-token',
+      fileCount: 1,
+      expiresAt: '2026-04-25T00:00:00Z',
+      downloadUrl: '/api/download/upload-token',
+    }
+    let resolveUpload: (response: UploadResponse) => void = () => {}
+    const uploadPromise = new Promise<UploadResponse>((resolve) => {
+      resolveUpload = resolve
+    })
+
+    uploadFilesMock.mockReturnValue(uploadPromise)
+
+    const { result } = renderHook(() => useUpload())
+
+    let startUploadPromise: Promise<void>
+    act(() => {
+      startUploadPromise = result.current.startUpload(files)
+    })
+
+    expect(result.current.status).toBe('uploading')
+    expect(result.current.progress).toBeNull()
+    expect(result.current.result).toBeNull()
+    expect(result.current.error).toBeNull()
+
+    await act(async () => {
+      resolveUpload(response)
+      await startUploadPromise
+    })
+  })
+
   it('transitions to error and stores api error when upload fails', async () => {
     const files = [new File(['hello'], 'hello.txt', { type: 'text/plain' })]
     const error = new ApiClientError({
